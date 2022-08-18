@@ -85,8 +85,8 @@ class HashMap {
   };
   std::unordered_multimap<HashKey, HashData, hash_cal> map;
 };
-typedef boost::shared_ptr<Hash::HashMap> Ptr;
 
+using Ptr = boost::shared_ptr<Hash::HashMap>;
 }  // namespace Hash
 }  // namespace PPF
 #endif  // DROST_PPF_HASHMAP_H
