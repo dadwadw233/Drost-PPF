@@ -23,6 +23,8 @@ class Drost_PPF {
 
   void setSceneCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr &input_scene);
 
+  void setPPFDiscretizationStep(const float &angle, const float &distance);
+
   void addModelCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr &input_model);
 
   void setLeafSize(const Eigen::Vector4f &leaf);
@@ -43,6 +45,10 @@ class Drost_PPF {
 
   int model_num = 0;
   int k_point = 0;
+
+  float angle_discretization_step = 0;
+  float distance_discretization_step = 0;
+
   std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> model_set;
   pcl::PointCloud<pcl::PointXYZ>::Ptr scene;
 
