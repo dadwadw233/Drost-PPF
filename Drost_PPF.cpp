@@ -75,7 +75,7 @@ bool Drost_PPF::check() {
     return false;
   } else if (leaf_size[0] == 0 || leaf_size[1] == 0 || leaf_size[2] == 0) {
     PCL_ERROR("Parameters for downsampling are not set");
-    return false
+    return false;
   }else if(angle_discretization_step == 0 || distance_discretization_step == 0){
     PCL_ERROR("Parameters for PPF discrete are not set");
     return false;

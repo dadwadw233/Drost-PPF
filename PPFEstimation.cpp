@@ -25,7 +25,7 @@ void PPFEstimation::compute(
 
   for (auto i = 0; i < input_point_normal->size(); ++i) {
 #pragma omp parallel shared(input_point_normal, output_cloud, hash_map, cout, \
-                            i) private(feature, data, p1, p2, n1, n2,         \
+                            i) private(data, p1, p2, n1, n2,         \
                                        delta) default(none)
     {
 #pragma omp for
@@ -54,11 +54,6 @@ void PPFEstimation::compute(
 
           float f3 = n1[0] * n2[0] + n1[1] * n2[1] + n1[2] * n2[2];
 
-          feature.f1 = f1;
-          feature.f2 = f2;
-          feature.f3 = f3;
-          feature.f4 = f4;
-          feature.alpha_m = 0.0f;
 
           data.first.k1 =
               static_cast<int>(std::floor(f1 / angle_discretization_step));
@@ -75,8 +70,6 @@ void PPFEstimation::compute(
 #pragma omp critical
           hash_map->addInfo(data);
 
-#pragma omp critical
-          output_cloud->points.push_back(feature);
         }
       }
     }
