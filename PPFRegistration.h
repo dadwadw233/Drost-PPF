@@ -15,7 +15,7 @@ class PPFRegistration {
  public:
   PPFRegistration() = default;
 
-  void compute(const pcl::PointCloud<pcl::PointNormal>::Ptr &scene, const Hash::Ptr &search_map);
+  void compute(const pcl::PointCloud<pcl::PointNormal>::Ptr &scene, const Hash::HashMap::Ptr &search_map);
 
  private:
 

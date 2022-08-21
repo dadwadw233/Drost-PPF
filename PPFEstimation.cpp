@@ -11,7 +11,7 @@ namespace PPF {
 void PPFEstimation::compute(
     const pcl::PointCloud<pcl::PointNormal>::Ptr &input_point_normal,
     pcl::PointCloud<pcl::PPFSignature>::Ptr &output_cloud,
-    Hash::Ptr &hash_map) {
+    Hash::HashMap::Ptr &hash_map) {
 
   pcl::PPFSignature feature{};
   std::pair<Hash::HashKey, Hash::HashData> data{};
