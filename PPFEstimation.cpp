@@ -6,6 +6,9 @@
 #include "PPFEstimation.h"
 #include "chrono"
 #include "omp.h"
+#include <Eigen/Dense>
+#include <Eigen/Geometry>
+
 namespace PPF {
 
 void PPFEstimation::compute(
@@ -53,6 +56,25 @@ void PPFEstimation::compute(
           float f2 = n1[0] * delta[0] + n2[1] * delta[1] + n2[2] * delta[2];
 
           float f3 = n1[0] * n2[0] + n1[1] * n2[1] + n1[2] * n2[2];
+
+          Eigen::Vector3f x_n{1,0,0};
+          auto model_alpha = pcl::getAngle3D(n1, x_n);
+          Eigen::Vector3f t {input_point_normal->points[i].x, input_point_normal->points[i].y, input_point_normal->points[i].z};//transition between mr and O
+          Eigen::Vector3f n_ = x_n.cross(n1);
+
+          Eigen::AngleAxisf v(static_cast<float>(model_alpha),n_);
+
+          Eigen::Matrix3f R;
+          R<<v.matrix();
+          Eigen::Matrix4f T;
+          T<<R(0,0), R(0,1), R(0,2), t[0],
+              R(1,0), R(1,1), R(1,2), t[1],
+              R(2,0), R(2,1), R(2,2), t[2],
+              0,0,0,1;
+          Eigen::Affine3f T_(T);
+
+          data.second.Tmg = T_;
+
 
 
           data.first.k1 =
