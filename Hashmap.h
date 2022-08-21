@@ -45,10 +45,11 @@ namespace PPF {
 namespace Hash {
 
 struct HashData {
-  std::pair<Eigen::Vector3f, std::pair<Eigen::Vector3f, Eigen::Vector3f>> Or;
-  std::pair<Eigen::Vector3f, std::pair<Eigen::Vector3f, Eigen::Vector3f>> Ot;
   pcl::PointNormal r;
   pcl::PointNormal t;
+  Eigen::Affine3f Tmg;
+  HashData(const pcl::PointNormal &r_, const pcl::PointNormal &t_, const Eigen::Affine3f &Tmg_):r(r_), t(t_), Tmg(Tmg_){};
+  HashData() = default;
 };
 struct HashKey {
   int k1;
