@@ -8,12 +8,11 @@
 #include "omp.h"
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
-
+#include "math.h"
 namespace PPF {
 
 void PPFEstimation::compute(
     const pcl::PointCloud<pcl::PointNormal>::Ptr &input_point_normal,
-    pcl::PointCloud<pcl::PPFSignature>::Ptr &output_cloud,
     Hash::HashMap::Ptr &hash_map) {
 
   pcl::PPFSignature feature{};
@@ -58,23 +57,35 @@ void PPFEstimation::compute(
           float f3 = n1[0] * n2[0] + n1[1] * n2[1] + n1[2] * n2[2];
 
           Eigen::Vector3f x_n{1,0,0};
+          std::cout<<"before:"<<std::endl<<pcl::getAngle3D(n1, x_n, true)<<std::endl;
           auto model_alpha = pcl::getAngle3D(n1, x_n);
-          Eigen::Vector3f t {input_point_normal->points[i].x, input_point_normal->points[i].y, input_point_normal->points[i].z};//transition between mr and O
-          Eigen::Vector3f n_ = x_n.cross(n1);
-
+          Eigen::Vector3f t {-input_point_normal->points[i].x, -input_point_normal->points[i].y, -input_point_normal->points[i].z};//transition between mr and O
+          //Eigen::Vector3f n_ = (x_n.cross(n1)).normalized();
+          Eigen::Vector3f n_ = (n1.cross(x_n)).normalized();
           Eigen::AngleAxisf v(static_cast<float>(model_alpha),n_);
 
           Eigen::Matrix3f R;
           R<<v.matrix();
-          Eigen::Matrix4f T;
-          T<<R(0,0), R(0,1), R(0,2), t[0],
-              R(1,0), R(1,1), R(1,2), t[1],
-              R(2,0), R(2,1), R(2,2), t[2],
-              0,0,0,1;
-          Eigen::Affine3f T_(T);
-
-          data.second.Tmg = T_;
-
+         /* auto M = this->rot_mat(Eigen::Vector3f {input_point_normal->points[i].x, input_point_normal->points[i].y, input_point_normal->points[i].z}, n_, model_alpha);
+          R<<M(0,0), M(0,1), M(0,2),
+              M(1,0), M(1,1), M(1,2),
+              M(2,0), M(2,1), M(2,2);
+          */
+          Eigen::Vector3f after{};
+          after = R*n1;
+         // std::cout<<"after:"<<std::endl<<pcl::getAngle3D(after, x_n, true)<<std::endl;
+            Eigen::Matrix4f T;
+            T << R(0, 0), R(0, 1), R(0, 2), t[0], R(1, 0), R(1, 1), R(1, 2),
+                t[1], R(2, 0), R(2, 1), R(2, 2), t[2], 0, 0, 0, 1;
+            Eigen::Affine3f T_(T);
+            data.second.Tmg = T_;
+            Eigen::Vector3f after_;
+            after_ = R*n1;
+            std::cout<<"after:"<<std::endl<<pcl::getAngle3D(after, x_n, true)<<std::endl;
+            if(pcl::getAngle3D(after, x_n, true) !=0){
+              PCL_ERROR("fuck");
+              return;
+            }
 
 
           data.first.k1 =
@@ -110,6 +121,6 @@ void PPFEstimation::setDiscretizationSteps(
   this->angle_discretization_step = angle_discretization_step;
   this->distance_discretization_step = distance_discretization_step;
 }
-PPFEstimation::PPFEstimation() {}
+
 
 }  // namespace PPF
