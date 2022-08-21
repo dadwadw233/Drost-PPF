@@ -117,4 +117,14 @@ void Drost_PPF::setPPFDiscretizationStep(const float &angle, const float &distan
   this->distance_discretization_step = distance;
   return ;
 }
+void Drost_PPF::test() {
+  PPFEstimation estimator{};
+  this->setLeafSize(Eigen::Vector4f(13,13,13,0));
+  this->setKPoint(10);
+  auto model_with_normals = subsampleAndCalculateNormals(model_set[0]);
+  PPF::Hash::HashMap::Ptr hashmap = boost::make_shared<PPF::Hash::HashMap>();
+  estimator.setDiscretizationSteps(12.0f / 180.0f * float(M_PI), 0.05f);
+  estimator.compute(model_with_normals, hashmap);
+
+}
 }  // namespace PPF
