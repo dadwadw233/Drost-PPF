@@ -5,32 +5,13 @@
 #ifndef DROST_PPF_HASHMAP_HPP
 #define DROST_PPF_HASHMAP_HPP
 
-#include <pcl/features/normal_3d.h>
-#include <pcl/features/ppf.h>
-#include <pcl/filters/extract_indices.h>
-#include <pcl/filters/voxel_grid.h>
-#include <pcl/io/pcd_io.h>
-#include <pcl/io/ply_io.h>
-#include <pcl/registration/ppf_registration.h>
-#include <pcl/sample_consensus/method_types.h>
-#include <pcl/sample_consensus/model_types.h>
-#include <pcl/segmentation/sac_segmentation.h>
-#include <pcl/visualization/pcl_visualizer.h>
-
-#include <pcl/features/fpfh.h>
 #include <pcl/features/moment_of_inertia_estimation.h>
 #include <pcl/features/normal_3d.h>
 #include <pcl/filters/passthrough.h>
-#include <pcl/filters/voxel_grid.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <pcl/registration/ia_ransac.h>
-#include <pcl/visualization/cloud_viewer.h>
-#include <Eigen/Core>
-#include <fstream>
-#include <limits>
 #include <pcl/search/impl/search.hpp>
 #include <unordered_map>
 #include <utility>
@@ -38,9 +19,6 @@
 #include "Eigen/Core"
 #include "pcl/console/print.h"
 #include "pcl/point_cloud.h"
-#include "pcl/point_representation.h"
-#include "pcl/registration/registration.h"
-#include "pcl/visualization/cloud_viewer.h"
 namespace PPF {
 namespace Hash {
 
@@ -73,12 +51,16 @@ struct hash_cal {
 };
 struct Trans_data {
   Eigen::Affine3f T;
+  Trans_data() = default;
+  explicit Trans_data(const Eigen::Affine3f &T_) : T(T_){};
 };
 struct Trans_key {
   pcl::PointNormal p;
   bool operator==(const Trans_key &k) const {
     return p.x == k.p.x && p.y == k.p.y && p.z == k.p.z;
   }
+  explicit Trans_key(const pcl::PointNormal &p_) : p(p_){};
+  Trans_key() = default;
 };
 struct Tran_cal {
   size_t operator()(Hash::Trans_key k) const {
@@ -92,7 +74,11 @@ template <class hash_key, class hash_data, class hash_cal_>
 class HashMap_ {
  public:
   using Ptr = boost::shared_ptr<HashMap_<hash_key, hash_data, hash_cal_>>;
+  bool addInfo(hash_key &&key, hash_data &&data);
+
   bool addInfo(hash_key &key, hash_data &data);
+
+  bool addInfo(std::pair<hash_key, hash_data> &&data);
 
   bool addInfo(std::pair<hash_key, hash_data> &data);
 
@@ -122,6 +108,17 @@ bool HashMap_<hash_key, hash_data, hash_cal_>::find(hash_key &key) {
 }
 template <class hash_key, class hash_data, class hash_cal_>
 bool HashMap_<hash_key, hash_data, hash_cal_>::addInfo(
+    std::pair<hash_key, hash_data> &&data) {
+  try {
+    this->map.insert(data);
+    return true;
+  } catch (std::exception &e) {
+    std::cout << e.what() << std::endl;
+    return false;
+  }
+}
+template <class hash_key, class hash_data, class hash_cal_>
+bool HashMap_<hash_key, hash_data, hash_cal_>::addInfo(
     std::pair<hash_key, hash_data> &data) {
   try {
     this->map.insert(data);
@@ -132,8 +129,19 @@ bool HashMap_<hash_key, hash_data, hash_cal_>::addInfo(
   }
 }
 template <class hash_key, class hash_data, class hash_cal_>
-bool HashMap_<hash_key, hash_data, hash_cal_>::addInfo(hash_key &key,
-                                                       hash_data &data) {
+bool HashMap_<hash_key, hash_data, hash_cal_>::addInfo(hash_key&& key,
+                                                       hash_data&& data) {
+  try {
+    this->map.emplace(key, data);
+    return true;
+  } catch (std::exception &e) {
+    std::cout << e.what() << std::endl;
+    return false;
+  }
+}
+template <class hash_key, class hash_data, class hash_cal_>
+bool HashMap_<hash_key, hash_data, hash_cal_>::addInfo(hash_key& key,
+                                                       hash_data& data) {
   try {
     this->map.emplace(key, data);
     return true;
