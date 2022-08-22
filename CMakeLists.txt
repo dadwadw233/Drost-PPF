@@ -13,8 +13,7 @@ link_directories($PCL_LIBRARY_DIRS)
 
 add_definitions(${PCL_DEFINITIONS})
 
-
-add_executable(Drost_PPF main.cpp Drost_PPF.cpp Drost_PPF.h Hashmap.cpp Hashmap.h PPFRegistration.cpp PPFRegistration.h PPFEstimation.cpp PPFEstimation.h)
+add_executable(Drost_PPF main.cpp Drost_PPF.cpp Drost_PPF.h PPFRegistration.cpp PPFRegistration.h PPFEstimation.cpp PPFEstimation.h Hashmap.hpp)
 
 target_link_libraries (Drost_PPF ${PCL_LIBRARIES})
 

@@ -76,11 +76,11 @@ bool Drost_PPF::check() {
   } else if (leaf_size[0] == 0 || leaf_size[1] == 0 || leaf_size[2] == 0) {
     PCL_ERROR("Parameters for downsampling are not set");
     return false;
-  }else if(angle_discretization_step == 0 || distance_discretization_step == 0){
+  } else if (angle_discretization_step == 0 ||
+             distance_discretization_step == 0) {
     PCL_ERROR("Parameters for PPF discrete are not set");
     return false;
-  }
-  else {
+  } else {
     return true;
   }
 }
@@ -112,19 +112,25 @@ void Drost_PPF::setKPoint(const int &num) {
     return;
   }
 }
-void Drost_PPF::setPPFDiscretizationStep(const float &angle, const float &distance) {
+void Drost_PPF::setPPFDiscretizationStep(const float &angle,
+                                         const float &distance) {
   this->angle_discretization_step = angle;
   this->distance_discretization_step = distance;
-  return ;
+  return;
 }
 void Drost_PPF::test() {
   PPFEstimation estimator{};
-  this->setLeafSize(Eigen::Vector4f(13,13,13,0));
+  this->setLeafSize(Eigen::Vector4f(13, 13, 13, 0));
   this->setKPoint(10);
   auto model_with_normals = subsampleAndCalculateNormals(model_set[0]);
-  PPF::Hash::HashMap::Ptr hashmap = boost::make_shared<PPF::Hash::HashMap>();
+  PPF::Hash::HashMap_<Hash::HashKey, Hash::HashData, Hash::hash_cal>::Ptr
+      hashmap = boost::make_shared<
+          PPF::Hash::HashMap_<Hash::HashKey, Hash::HashData, Hash::hash_cal>>();
+  PPF::Hash::HashMap_<Hash::Trans_key, Hash::Trans_data,
+                      Hash::Tran_cal>::Ptr model_trans =
+      boost::make_shared<PPF::Hash::HashMap_<Hash::Trans_key, Hash::Trans_data,
+                                             Hash::Tran_cal>>();
   estimator.setDiscretizationSteps(12.0f / 180.0f * float(M_PI), 0.05f);
-  estimator.compute(model_with_normals, hashmap);
-
+  estimator.compute(model_with_normals, hashmap, model_trans);
 }
 }  // namespace PPF

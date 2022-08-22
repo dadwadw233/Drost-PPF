@@ -9,13 +9,13 @@
 #include <pcl/filters/extract_indices.h>
 #include <pcl/filters/voxel_grid.h>
 #include "Eigen/Core"
+#include "Hashmap.hpp"
+#include "PPFEstimation.h"
 #include "pcl/common/transforms.h"
 #include "pcl/point_cloud.h"
 #include "pcl/point_representation.h"
 #include "pcl/point_types.h"
 #include "pcl/visualization/cloud_viewer.h"
-#include "PPFEstimation.h"
-#include "Hashmap.h"
 namespace PPF {
 class Drost_PPF {
  public:
@@ -40,6 +40,7 @@ class Drost_PPF {
   decltype(auto) getTransform();
 
   void test();
+
  private:
   decltype(auto) subsampleAndCalculateNormals(
       const pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud);

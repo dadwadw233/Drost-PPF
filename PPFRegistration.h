@@ -4,21 +4,22 @@
 
 #ifndef DROST_PPF_PPFREGISTRATION_H
 #define DROST_PPF_PPFREGISTRATION_H
-#include "Hashmap.h"
+#include "Hashmap.hpp"
+#include "omp.h"
 #include "pcl/point_cloud.h"
 #include "pcl/point_types.h"
 #include "pcl/visualization/cloud_viewer.h"
-#include "omp.h"
 namespace PPF {
 
 class PPFRegistration {
  public:
   PPFRegistration() = default;
 
-  void compute(const pcl::PointCloud<pcl::PointNormal>::Ptr &scene, const Hash::HashMap::Ptr &search_map);
+  void compute(const pcl::PointCloud<pcl::PointNormal>::Ptr &scene,
+               const Hash::HashMap_<Hash::HashKey, Hash::HashData,
+                                    Hash::hash_cal>::Ptr &search_map);
 
  private:
-
 };
 
 }  // namespace PPF
