@@ -30,16 +30,20 @@ void PPFEstimation::compute(
 
   for (auto i = 0; i < input_point_normal->size(); ++i) {
     Eigen::Vector3f x_n{1, 0, 0};
-    auto alpha = pcl::getAngle3D(Eigen::Vector3f (input_point_normal->points[i].normal_x,
-                                                 input_point_normal->points[i].normal_y,
-                                                 input_point_normal->points[i].normal_z), x_n);
+    auto alpha =
+        pcl::getAngle3D(Eigen::Vector3f(input_point_normal->points[i].normal_x,
+                                        input_point_normal->points[i].normal_y,
+                                        input_point_normal->points[i].normal_z),
+                        x_n);
     Eigen::Vector3f t{
-        -input_point_normal->points[i].x,
-        -input_point_normal->points[i].y,
+        -input_point_normal->points[i].x, -input_point_normal->points[i].y,
         -input_point_normal->points[i].z};  // transition between mr and O
-    Eigen::Vector3f n_ = (Eigen::Vector3f (input_point_normal->points[i].normal_x,
-                                          input_point_normal->points[i].normal_y,
-                                          input_point_normal->points[i].normal_z).cross(x_n)).normalized();
+    Eigen::Vector3f n_ =
+        (Eigen::Vector3f(input_point_normal->points[i].normal_x,
+                         input_point_normal->points[i].normal_y,
+                         input_point_normal->points[i].normal_z)
+             .cross(x_n))
+            .normalized();
     Eigen::AngleAxisf v(static_cast<float>(alpha), n_);
 
     Eigen::Matrix3f R;
@@ -48,11 +52,13 @@ void PPFEstimation::compute(
     T << R(0, 0), R(0, 1), R(0, 2), t[0], R(1, 0), R(1, 1), R(1, 2), t[1],
         R(2, 0), R(2, 1), R(2, 2), t[2], 0, 0, 0, 1;
     Eigen::Affine3f T_(T);
-    model_trans->addInfo(PPF::Hash::Trans_key(input_point_normal->points[i]), PPF::Hash::Trans_data(T_));
-#pragma omp parallel shared(input_point_normal, output_cloud, hash_map, cout, \
-                            i) private(data, p1, p2, n1, n2,                  \
+    model_trans->addInfo(PPF::Hash::Trans_key(input_point_normal->points[i]),
+                         PPF::Hash::Trans_data(T_));
+#pragma omp parallel shared(R, input_point_normal, hash_map, \
+                            i) private(data, p1, p2, n1, n2,                \
                                        delta) default(none)
     {
+
 #pragma omp for
       for (auto j = 0; j < input_point_normal->size(); ++j) {
         if (i == j) {
@@ -70,7 +76,28 @@ void PPFEstimation::compute(
               input_point_normal->points[j].normal_z;
           delta = p2 - p1;  // pt-pr
           float f4 = delta.norm();
+          Eigen::Vector3f d = delta.normalized();
+          d = R * d;
+          Eigen::Vector3f x{1, 0, 0};
+          Eigen::Vector3f z{0, 0, 1};
+          Eigen::Vector3f y{0, 1, 0};
 
+          double model_alpha =
+              acos(fabs(d.cross(x).dot(y)) / (d.cross(x).norm() * y.norm()));
+
+          if (fabs(pcl::getAngle3D(d, z, true)) <= 90 &&
+              fabs(pcl::getAngle3D(d, y, true)) <= 90) {
+            model_alpha = model_alpha;
+          } else if (fabs(pcl::getAngle3D(d, z, true)) <= 90 &&
+                     fabs(pcl::getAngle3D(d, y, true)) >= 90) {
+            model_alpha = 2 * M_PI - model_alpha;
+          } else if (fabs(pcl::getAngle3D(d, z, true)) >= 90 &&
+                     fabs(pcl::getAngle3D(d, y, true)) >= 90) {
+            model_alpha = M_PI + model_alpha;
+          } else {
+            model_alpha = M_PI - model_alpha;
+          }
+          data.second.model_angle = model_alpha;
           delta /= f4;
 
           float f1 = n1[0] * delta[0] + n1[1] * delta[1] + n1[2] * delta[2];
@@ -78,8 +105,6 @@ void PPFEstimation::compute(
           float f2 = n1[0] * delta[0] + n2[1] * delta[1] + n2[2] * delta[2];
 
           float f3 = n1[0] * n2[0] + n1[1] * n2[1] + n1[2] * n2[2];
-
-
 
           data.first.k1 =
               static_cast<int>(std::floor(f1 / angle_discretization_step));
