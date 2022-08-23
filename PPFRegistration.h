@@ -24,6 +24,7 @@ class PPFRegistration {
         searchMap(search_map),
         model_trans(Trans_map){};
 
+  PPFRegistration();
   void compute();
 
   Eigen::Affine3f getFinalTransformation();
@@ -56,9 +57,10 @@ class PPFRegistration {
   PPFRegistration(const PPFRegistration &) = delete;
 
  private:
-  float scene_reference_point_sampling_rate{};
-  float clustering_position_diff_threshold{};
-  float clustering_rotation_diff_threshold{};
+  bool check();
+  float scene_reference_point_sampling_rate = 0;
+  float clustering_position_diff_threshold = 0;
+  float clustering_rotation_diff_threshold = 0;
 
   pcl::PointCloud<pcl::PointNormal>::Ptr model_cloud_with_normal;
   pcl::PointCloud<pcl::PointNormal>::Ptr scene_cloud_with_normal;
@@ -67,9 +69,9 @@ class PPFRegistration {
   Hash::HashMap_<Hash::Trans_key, Hash::Trans_data, Hash::Tran_cal>::Ptr
       model_trans;
 
-  float angle_discretization_step;
-  float distance_discretization_step;
-  float d_obj;
+  float angle_discretization_step = 0;
+  float distance_discretization_step = 0;
+  float d_obj = 0;
 };
 
 }  // namespace PPF

@@ -48,5 +48,37 @@ void PPFRegistration::setInputTarget(
     const pcl::PointCloud<pcl::PointNormal>::Ptr& cloud) {
   this->scene_cloud_with_normal = cloud;
 }
-void PPFRegistration::compute() {}
+
+PPFRegistration::PPFRegistration() {
+  this->model_cloud_with_normal =
+      boost::make_shared<pcl::PointCloud<pcl::PointNormal>>();
+  this->scene_cloud_with_normal =
+      boost::make_shared<pcl::PointCloud<pcl::PointNormal>>();
+  this->searchMap = boost::make_shared<
+      Hash::HashMap_<Hash::HashKey, Hash::HashData, Hash::hash_cal>>();
+  this->model_trans = boost::make_shared<
+      Hash::HashMap_<Hash::Trans_key, Hash::Trans_data, Hash::Tran_cal>>();
+}
+bool PPFRegistration::check() {
+  if (this->model_cloud_with_normal->points.empty() ||
+      this->scene_cloud_with_normal->points.empty() ||
+      this->searchMap->empty() || this->model_trans->empty()) {
+    PCL_ERROR("Neither point cloud or search map/trans map should be empty!\n");
+    PCL_ERROR("Init failed, make sure all params are initialized and retry\n");
+    return false;
+  } else if (!scene_reference_point_sampling_rate ||
+             !clustering_position_diff_threshold ||
+             !clustering_rotation_diff_threshold) {
+    PCL_ERROR("Params for clustering are not be initialized\n");
+    PCL_ERROR("Init failed, make sure all params are initialized and retry\n");
+    return false;
+  } else if (!angle_discretization_step || !distance_discretization_step) {
+    PCL_ERROR("Params for PPF establishment are not be initialized\n");
+    PCL_ERROR("Init failed, make sure all params are initialized and retry\n");
+    return false;
+  } else {
+    PCL_INFO("Pass init check");
+    return true;
+  }
+}
 }  // namespace PPF
