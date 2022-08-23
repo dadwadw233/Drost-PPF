@@ -82,12 +82,14 @@ class HashMap_ {
 
   bool addInfo(std::pair<hash_key, hash_data> &data);
 
-  decltype(auto) getData(hash_key &key) { return (this->map.find(key)); }
+  decltype(auto) getData(hash_key & key) { return (this->map.find(key)); }
+  decltype(auto) getData(hash_key && key) { return (this->map.find(key)); }
   decltype(auto) begin() { return this->map.begin(); }
 
   decltype(auto) getSameKeyNum(hash_key &key) { return this->map.count(key); }
 
   bool find(hash_key &key);
+  bool find(hash_key &&key);
 
   bool empty() { return this->map.empty(); }
 
