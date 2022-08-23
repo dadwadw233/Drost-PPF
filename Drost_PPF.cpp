@@ -123,6 +123,7 @@ void Drost_PPF::test() {
   this->setLeafSize(Eigen::Vector4f(13, 13, 13, 0));
   this->setKPoint(10);
   auto model_with_normals = subsampleAndCalculateNormals(model_set[0]);
+  auto scene_with_normals = subsampleAndCalculateNormals(this->scene);
   PPF::Hash::HashMap_<Hash::HashKey, Hash::HashData, Hash::hash_cal>::Ptr
       hashmap = boost::make_shared<
           PPF::Hash::HashMap_<Hash::HashKey, Hash::HashData, Hash::hash_cal>>();
@@ -132,5 +133,13 @@ void Drost_PPF::test() {
                                              Hash::Tran_cal>>();
   estimator.setDiscretizationSteps(12.0f / 180.0f * float(M_PI), 0.05f);
   estimator.compute(model_with_normals, hashmap, model_trans);
+  PPFRegistration registrator(scene_with_normals, model_with_normals,hashmap,model_trans);
+  registrator.setSceneReferencePointSamplingRate(10);
+  registrator.setPositionClusteringThreshold(12);  //投票的体素网格的size
+  registrator.setRotationClusteringThreshold(30.0f / 180.0f *
+                                                  float(M_PI));
+  registrator.setDiscretizationSteps(12.0f / 180.0f * float(M_PI),
+                                          0.05f);
+  registrator.compute();
 }
 }  // namespace PPF

@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
   pcl::PCDReader reader;
   reader.read(argv[1], *model);
   reader.read(argv[2], *scene);
-  PPF::Drost_PPF handle(model);
+  PPF::Drost_PPF handle(model,scene);
   handle.test();
 
   return 0;

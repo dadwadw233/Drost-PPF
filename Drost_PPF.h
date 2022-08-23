@@ -11,6 +11,7 @@
 #include "Eigen/Core"
 #include "Hashmap.hpp"
 #include "PPFEstimation.h"
+#include "PPFRegistration.h"
 #include "pcl/common/transforms.h"
 #include "pcl/point_cloud.h"
 #include "pcl/point_representation.h"
