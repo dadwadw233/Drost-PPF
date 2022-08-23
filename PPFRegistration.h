@@ -25,6 +25,7 @@ class PPFRegistration {
         model_trans(Trans_map){};
 
   PPFRegistration();
+
   void compute();
 
   Eigen::Affine3f getFinalTransformation();

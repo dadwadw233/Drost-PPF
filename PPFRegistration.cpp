@@ -3,6 +3,7 @@
 //
 
 #include "PPFRegistration.h"
+#include <pcl/common/common.h>
 
 namespace PPF {
 Eigen::Affine3f PPFRegistration::getFinalTransformation() {
@@ -79,6 +80,129 @@ bool PPFRegistration::check() {
   } else {
     PCL_INFO("Pass init check");
     return true;
+  }
+}
+void PPFRegistration::compute() {
+  if (!check()) {
+    PCL_ERROR("Initialization check failed, online processing terminated");
+    return;
+  } else {
+    auto tp1 = boost::chrono::steady_clock::now();
+    std::pair<Hash::HashKey, Hash::HashData> data{};
+    Eigen::Vector3f p1{};
+    Eigen::Vector3f p2{};
+    Eigen::Vector3f n1{};
+    Eigen::Vector3f n2{};
+    Eigen::Vector3f delta{};
+    std::cout << "finish Registering init" << std::endl;
+    std::cout << "computing ..." << std::endl;
+
+    for (auto i = 0; i < scene_cloud_with_normal->points.size(); ++i) {
+      Eigen::Vector3f x_n{1, 0, 0};
+      auto ref_alpha = pcl::getAngle3D(
+          Eigen::Vector3f(scene_cloud_with_normal->points[i].normal_x,
+                          scene_cloud_with_normal->points[i].normal_y,
+                          scene_cloud_with_normal->points[i].normal_z),
+          x_n);
+      Eigen::Vector3f t{-scene_cloud_with_normal->points[i].x,
+                        -scene_cloud_with_normal->points[i].y,
+                        -scene_cloud_with_normal->points[i]
+                             .z};  // transition between mr and O
+      Eigen::Vector3f n_ =
+          (Eigen::Vector3f(scene_cloud_with_normal->points[i].normal_x,
+                           scene_cloud_with_normal->points[i].normal_y,
+                           scene_cloud_with_normal->points[i].normal_z)
+               .cross(x_n))
+              .normalized();
+      Eigen::AngleAxisf v(static_cast<float>(ref_alpha), n_);
+
+      Eigen::Matrix3f R;
+      R << v.matrix();
+      Eigen::Matrix4f T;
+      T << R(0, 0), R(0, 1), R(0, 2), t[0], R(1, 0), R(1, 1), R(1, 2), t[1],
+          R(2, 0), R(2, 1), R(2, 2), t[2], 0, 0, 0, 1;
+      Eigen::Affine3f T_(T);
+      model_trans->addInfo(
+          PPF::Hash::Trans_key(scene_cloud_with_normal->points[i]),
+          PPF::Hash::Trans_data(T_));
+#pragma omp parallel for shared(i, scene_reference_point_sampling_rate, \
+                                R) private(p1, p2, n1, n2, delta,       \
+                                           data) default(none) num_threads(15)
+      for (auto j = 0; j < scene_cloud_with_normal->points.size(); j++) {
+        if (i == j) {
+          continue;
+        } else {
+          p1 << scene_cloud_with_normal->points[i].x,
+              scene_cloud_with_normal->points[i].y,
+              scene_cloud_with_normal->points[i].z;
+          p2 << scene_cloud_with_normal->points[j].x,
+              scene_cloud_with_normal->points[j].y,
+              scene_cloud_with_normal->points[j].z;
+          n1 << scene_cloud_with_normal->points[i].normal_x,
+              scene_cloud_with_normal->points[i].normal_y,
+              scene_cloud_with_normal->points[i].normal_z;
+          n2 << scene_cloud_with_normal->points[j].normal_x,
+              scene_cloud_with_normal->points[j].normal_y,
+              scene_cloud_with_normal->points[j].normal_z;
+
+          delta = p2 - p1;
+          float f4 = delta.norm();
+          Eigen::Vector3f d = delta.normalized();
+          d = R * d;
+          Eigen::Vector3f x{1, 0, 0};
+          Eigen::Vector3f z{0, 0, 1};
+          Eigen::Vector3f y{0, 1, 0};
+
+          double scene_alpha =
+              acos(fabs(d.cross(x).dot(y)) / (d.cross(x).norm() * y.norm()));
+
+          if (fabs(pcl::getAngle3D(d, z, true)) <= 90 &&
+              fabs(pcl::getAngle3D(d, y, true)) <= 90) {
+            scene_alpha = scene_alpha;
+          } else if (fabs(pcl::getAngle3D(d, z, true)) <= 90 &&
+                     fabs(pcl::getAngle3D(d, y, true)) >= 90) {
+            scene_alpha = 2 * M_PI - scene_alpha;
+          } else if (fabs(pcl::getAngle3D(d, z, true)) >= 90 &&
+                     fabs(pcl::getAngle3D(d, y, true)) >= 90) {
+            scene_alpha = M_PI + scene_alpha;
+          } else {
+            scene_alpha = M_PI - scene_alpha;
+          }
+          data.second.angle = scene_alpha;
+          delta /= f4;
+
+          float f1 = n1[0] * delta[0] + n1[1] * delta[1] + n1[2] * delta[2];
+
+          float f2 = n1[0] * delta[0] + n2[1] * delta[1] + n2[2] * delta[2];
+
+          float f3 = n1[0] * n2[0] + n1[1] * n2[1] + n1[2] * n2[2];
+
+          data.first.k1 =
+              static_cast<int>(std::floor(f1 / angle_discretization_step));
+          data.first.k2 =
+              static_cast<int>(std::floor(f2 / angle_discretization_step));
+          data.first.k3 =
+              static_cast<int>(std::floor(f3 / angle_discretization_step));
+          data.first.k4 =
+              static_cast<int>(std::floor(f4 / distance_discretization_step));
+
+          data.second.r = scene_cloud_with_normal->points[i];
+          data.second.t = scene_cloud_with_normal->points[j];
+          if(searchMap->find(data.first)){
+            auto model_data = this->searchMap->getData(data.first);
+            auto same_key_num = this->searchMap->getSameKeyNum(data.first);
+
+
+            for (auto k = 0; k<same_key_num;++k){
+              auto alpha = model_data->second.angle - data.second.angle>0?model_data->second.angle - data.second.angle:data.second.angle-model_data->second.angle;
+
+              model_data++;
+            }
+          }
+
+        }
+      }
+    }
   }
 }
 }  // namespace PPF
