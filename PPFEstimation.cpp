@@ -97,7 +97,7 @@ void PPFEstimation::compute(
           } else {
             model_alpha = M_PI - model_alpha;
           }
-          data.second.model_angle = model_alpha;
+          data.second.angle = model_alpha;
           delta /= f4;
 
           float f1 = n1[0] * delta[0] + n1[1] * delta[1] + n1[2] * delta[2];

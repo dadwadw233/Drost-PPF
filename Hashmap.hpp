@@ -25,10 +25,10 @@ namespace Hash {
 struct HashData {
   pcl::PointNormal r;
   pcl::PointNormal t;
-  double model_angle{};
+  double angle{};
   HashData(const pcl::PointNormal &r_, const pcl::PointNormal &t_,
-           const double model_angle_)
-      : r(r_), t(t_), model_angle(model_angle_){};
+           const double angle_)
+      : r(r_), t(t_), angle(angle_){};
   HashData() = default;
 };
 struct HashKey {
