@@ -99,7 +99,7 @@ void PPFRegistration::compute() {
     int cnt = 0;
     double sum = 0;
     //初始化accumulatorSpace
-    accumulatorSpace.resize(this->scene_cloud_with_normal->size()+1);
+    accumulatorSpace.resize(this->scene_cloud_with_normal->points.size()+1);
     for(auto &s:accumulatorSpace){
       s.resize(static_cast<int>(360/(angle_discretization_step*180/M_PI))+1);
     }
@@ -291,14 +291,15 @@ void PPFRegistration::compute() {
       }
 
     }
-
+    auto final = accumulatorSort();
+    std::cout<<"T: "<<final.matrix()<<std::endl;
+    this->finalTransformation = final;
   }
 }
 void PPFRegistration::vote(const int& i_, const int& alpha_,
                            const Eigen::Affine3f& T_) {
 
   accumulatorSpace[i_][alpha_].value+=1;
-
   accumulatorSpace[i_][alpha_].T_set.push_back(T_);
 }
 }  // namespace PPF

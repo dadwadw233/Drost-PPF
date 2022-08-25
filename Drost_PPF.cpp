@@ -141,5 +141,21 @@ void Drost_PPF::test() {
   registrator.setDiscretizationSteps(12.0f / 180.0f * float(M_PI),
                                           0.05f);
   registrator.compute();
+  auto T = registrator.getFinalTransformation();
+  pcl::PointCloud<pcl::PointNormal>::Ptr after = boost::make_shared<pcl::PointCloud<pcl::PointNormal>>();
+  pcl::transformPointCloud(*model_with_normals, *after, T);
+  pcl::visualization::PCLVisualizer view("result");
+  view.setBackgroundColor(0, 0, 0);
+  pcl::visualization::PointCloudColorHandlerCustom<pcl::PointNormal> red(
+      scene_with_normals, 255, 0, 0);
+  view.addPointCloud(scene_with_normals, red, "scene_cloud");
+  pcl::visualization::PointCloudColorHandlerCustom<pcl::PointNormal> green(
+      after, 0, 255, 0);
+  view.addPointCloud(after, green, "result_cloud");
+  while (!view.wasStopped()) {
+    view.spinOnce(100);
+    boost::this_thread::sleep(boost::posix_time::microseconds(1000));
+  }
+
 }
 }  // namespace PPF

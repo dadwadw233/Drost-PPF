@@ -64,12 +64,34 @@ class PPFRegistration {
   };
   bool check();
   void vote(const int &i_, const int &alpha_, const Eigen::Affine3f &T_);
-  decltype(auto) getMeanTransform(const int &i_, const int &alpha_){
+  decltype(auto) getMeanTransform(const int i_, const int alpha_){
     Eigen::Matrix4f sum{};
+    //std::cout<<"ok"<<std::endl;
+    //std::cout<<accumulatorSpace[i_][alpha_].value<<std::endl;
     for(auto T:accumulatorSpace[i_][alpha_].T_set){
       sum+=T.matrix();
     }
-    return Eigen::Affine3f (sum/accumulatorSpace[i_][alpha_].value);
+    return Eigen::Affine3f (sum/accumulatorSpace[i_][alpha_].T_set.size());
+    //return accumulatorSpace[i_][alpha_].T_set[0];
+  }
+  decltype(auto) accumulatorSort(){
+    int max_value = -1;
+    int i = 0;
+    int alpha = 0;
+
+    for(auto j = 0;j<accumulatorSpace.size();j++){
+      for(auto k = 0;k<accumulatorSpace[j].size();k++){
+        //std::cout<<j<<" "<<k<<std::endl;
+        if(accumulatorSpace[j][k].value>max_value){
+          i = j;
+          alpha = k;
+          max_value = accumulatorSpace[j][k].value;
+        }
+      }
+    }
+    //std::cout<<i<<" "<<alpha;
+    std::cout<<"max vote :"<<max_value<<std::endl;
+    return getMeanTransform(i,alpha);
   }
   float scene_reference_point_sampling_rate = 0;
   float clustering_position_diff_threshold = 0;
