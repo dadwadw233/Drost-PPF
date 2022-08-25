@@ -269,21 +269,19 @@ void PPFRegistration::compute() {
               Eigen::Vector3f scene_n = (scene_d.cross(Eigen::Vector3f (data.second.r.normal_x,data.second.r.normal_y, data.second.r.normal_z))).normalized();
 
               float delta_ = acos(fminf(fmaxf(fabs(model_n.dot(scene_n))/(model_n.norm()*scene_n.norm()),-1.0),1.0))*180/M_PI;
-              std::cout<<"before_delta_angle: \n"<<delta_<<std::endl;
+              //std::cout<<"before_delta_angle: \n"<<delta_<<std::endl;
               model_n = (model_d_after.cross(Tms_.rotation()*Eigen::Vector3f (model_data->second.r.normal_x,model_data->second.r.normal_y, model_data->second.r.normal_z))).normalized();
               scene_n = (scene_d.cross(Eigen::Vector3f (data.second.r.normal_x,data.second.r.normal_y, data.second.r.normal_z))).normalized();
 
               delta_ = acos(fminf(fmaxf(fabs(model_n.dot(scene_n))/(model_n.norm()*scene_n.norm()),-1.0),1.0))*180/M_PI;
-              std::cout<<"after_delta_angle: \n"<<delta_<<std::endl;
+              //std::cout<<"after_delta_angle: \n"<<delta_<<std::endl;
 */
               //离散化alpha
 
               alpha = static_cast<int>(std::floor(180*alpha/M_PI/(angle_discretization_step*180/M_PI)));
               //std::cout<<alpha<<std::endl;
 #pragma omp critical
-              vote(i, alpha,T_);
-
-
+              vote(i, alpha,Tms_);
               ++model_data;
             }
           }
@@ -299,7 +297,7 @@ void PPFRegistration::compute() {
 void PPFRegistration::vote(const int& i_, const int& alpha_,
                            const Eigen::Affine3f& T_) {
 
-  accumulatorSpace[i_][alpha_].value+=1;
+  accumulatorSpace[i_][alpha_].value+= 1;
   accumulatorSpace[i_][alpha_].T_set.push_back(T_);
 }
 }  // namespace PPF

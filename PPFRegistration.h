@@ -4,11 +4,13 @@
 
 #ifndef DROST_PPF_PPFREGISTRATION_H
 #define DROST_PPF_PPFREGISTRATION_H
+#include <pcl/common/common.h>
 #include "Hashmap.hpp"
 #include "omp.h"
 #include "pcl/point_cloud.h"
 #include "pcl/point_types.h"
 #include "pcl/visualization/cloud_viewer.h"
+#include "pcl/common/transforms.h"
 namespace PPF {
 
 class PPFRegistration {
@@ -91,8 +93,59 @@ class PPFRegistration {
     }
     //std::cout<<i<<" "<<alpha;
     std::cout<<"max vote :"<<max_value<<std::endl;
-    return getMeanTransform(i,alpha);
+    //return getMeanTransform(i,alpha);
+    return accumulatorSpace[i][alpha].T_set[0];
   }
+
+  decltype(auto) HypoVerification(const Eigen::Affine3f &T) {
+    pcl::PointCloud<pcl::PointNormal>::Ptr temp =
+        boost::make_shared<pcl::PointCloud<pcl::PointNormal>>();
+
+    pcl::transformPointCloud(*this->model_cloud_with_normal, *temp, T);
+    pcl::search::KdTree<pcl::PointNormal>::Ptr kdtree(
+        new pcl::search::KdTree<pcl::PointNormal>());
+    auto cnt = 0;
+    double radius = 100;
+    kdtree->setInputCloud(this->scene_cloud_with_normal);
+    //#pragma omp parallel for shared(temp, radius, cnt,search_cloud, kdtree)
+    // default(none) num_threads(15)
+    for (auto i = temp->points.begin(); i != temp->points.end(); i++) {
+      std::vector<int> indices;
+      std::vector<float> distance;
+      //#pragma omp critical
+      kdtree->radiusSearch(*i, radius, indices, distance);
+      if (!indices.empty()) {
+        //#pragma omp critical
+        cnt += 0;
+        continue;
+      } else {
+        int num = 0;
+        for (auto j = 0; j < indices.size(); ++j) {
+          if (pcl::getAngle3D(
+                  static_cast<const Eigen::Vector3f>(
+                      scene_cloud_with_normal->points[indices[j]].normal),
+                  static_cast<const Eigen::Vector3f>(i->normal), true) >= 25) {
+            num++;
+            break;
+          } else {
+            continue;
+          }
+        }
+        if (num > 0) {
+          //#pragma omp critical
+          cnt++;
+        } else {
+          //#pragma omp critical
+          cnt += 0;
+        }
+      }
+    }
+
+    //#pragma omp barrier
+    return cnt;
+  }
+
+
   float scene_reference_point_sampling_rate = 0;
   float clustering_position_diff_threshold = 0;
   float clustering_rotation_diff_threshold = 0;
