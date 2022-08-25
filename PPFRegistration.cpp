@@ -98,6 +98,11 @@ void PPFRegistration::compute() {
     std::cout << "computing ..." << std::endl;
     int cnt = 0;
     double sum = 0;
+    //初始化accumulatorSpace
+    accumulatorSpace.resize(this->scene_cloud_with_normal->size()+1);
+    for(auto s:accumulatorSpace){
+      s.resize(static_cast<int>(360/(angle_discretization_step*180/M_PI))+1);
+    }
     for (auto i = 0; i < scene_cloud_with_normal->points.size(); ++i) {
       Eigen::Vector3f x_n{1, 0, 0};
       auto ref_alpha = pcl::getAngle3D(
@@ -271,6 +276,11 @@ void PPFRegistration::compute() {
               delta_ = acos(fminf(fmaxf(fabs(model_n.dot(scene_n))/(model_n.norm()*scene_n.norm()),-1.0),1.0))*180/M_PI;
               std::cout<<"after_delta_angle: \n"<<delta_<<std::endl;
 */
+              //离散化alpha
+
+              alpha = static_cast<int>(std::floor(180*alpha/M_PI/(angle_discretization_step*180/M_PI)));
+              //std::cout<<alpha<<std::endl;
+
 
               ++model_data;
             }

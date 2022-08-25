@@ -58,6 +58,15 @@ class PPFRegistration {
   PPFRegistration(const PPFRegistration &) = delete;
 
  private:
+  struct Accumulator{
+    int value;
+    Eigen::Affine3f T{};
+    Accumulator(){
+      value = 0;
+    }
+    Accumulator(const int &value_, const Eigen::Affine3f &T_):value(value_),T(T_){};
+
+  };
   bool check();
   float scene_reference_point_sampling_rate = 0;
   float clustering_position_diff_threshold = 0;
@@ -69,6 +78,7 @@ class PPFRegistration {
   Hash::HashMap_<Hash::HashKey, Hash::HashData, Hash::hash_cal>::Ptr searchMap;
   Hash::HashMap_<Hash::Trans_key, Hash::Trans_data, Hash::Tran_cal>::Ptr
       model_trans;
+  std::vector<std::vector<Accumulator>> accumulatorSpace;
 
   float angle_discretization_step = 0;
   float distance_discretization_step = 0;
