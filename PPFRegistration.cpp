@@ -123,9 +123,7 @@ void PPFRegistration::compute() {
       T << R(0, 0), R(0, 1), R(0, 2), t[0], R(1, 0), R(1, 1), R(1, 2), t[1],
           R(2, 0), R(2, 1), R(2, 2), t[2], 0, 0, 0, 1;
       Eigen::Affine3f T_(T);
-      model_trans->addInfo(
-          PPF::Hash::Trans_key(scene_cloud_with_normal->points[i]),
-          PPF::Hash::Trans_data(T_));
+
 /*#pragma omp parallel for shared(i, scene_reference_point_sampling_rate, \
                                 R, cout, sum, cnt) private(p1, p2, n1, n2, delta,       \
                                            data) default(none) num_threads(15)*/
@@ -169,6 +167,7 @@ void PPFRegistration::compute() {
           } else {
             scene_alpha = M_PI - scene_alpha;
           }
+
           data.second.angle = scene_alpha;
           delta /= f4;
 
@@ -194,7 +193,9 @@ void PPFRegistration::compute() {
             auto same_key_num = this->searchMap->getSameKeyNum(data.first);
 
             for (auto k = 0; k < same_key_num; ++k) {
-              auto alpha = model_data->second.angle - data.second.angle > 0
+              //std::cout<<"m_a:"<<model_data->second.angle*180/M_PI<<std::endl;
+              //std::cout<<"s_a:"<<data.second.angle*180/M_PI<<std::endl;
+              auto alpha = model_data->second.angle - data.second.angle >= 0
                                ? model_data->second.angle - data.second.angle
                                : 2*M_PI-data.second.angle + model_data->second.angle;
 
@@ -210,43 +211,74 @@ void PPFRegistration::compute() {
                                   (data.second.t.z - data.second.r.z))
                       .normalized();
               scene_d = R * scene_d;
-              model_d = this->model_trans
-                            ->getData(Hash::Trans_key(model_data->second.r))
-                            ->second.T.rotation() *
-                        model_d;
-
+              model_d = this->model_trans->getData(Hash::Trans_key(model_data->second.r))->second.T.rotation() *model_d;
               Eigen::AngleAxisf ms(static_cast<float>(alpha), x);
+              Eigen::Matrix4f Rx{};
 
-              Eigen::Matrix3f msR;
-              msR<< ms.matrix();
-              Eigen::Matrix4f msT;
-              Eigen::Vector3f model_d_after = msR * model_d;
+              Rx<<ms.matrix()(0,0),ms.matrix()(0,1),ms.matrix()(0,2),0,
+                  ms.matrix()(1,0),ms.matrix()(1,1),ms.matrix()(1,2),0,
+                  ms.matrix()(2,0),ms.matrix()(2,1),ms.matrix()(2,2),0,
+                  0,0,0,1;
+              Eigen::Affine3f Rx_{Rx};
+              //std::cout<<"first: \n"<<ms.matrix()<<std::endl;
+              //std::cout<<"second: \n"<<Rx<<std::endl;
+              //生成变换矩阵
+              //Eigen::Matrix4f Tms = T_.inverse().matrix()*Rx_.matrix()*this->model_trans->getData(Hash::Trans_key(model_data->second.r))->second.T.matrix();
+                Eigen::Matrix3f Rms = T_.rotation().inverse()*Rx_.rotation()*this->model_trans->getData(Hash::Trans_key(model_data->second.r))->second.T.rotation();
+                Eigen::Vector3f tms = -T_.translation()+this->model_trans->getData(Hash::Trans_key(model_data->second.r))->second.T.translation();
+                Eigen::Matrix4f Tms{};
+                Tms<<Rms(0,0), Rms(0,1), Rms(0,2), tms[0],
+                    Rms(1,0), Rms(1,1), Rms(1,2), tms[1],
+                    Rms(2,0), Rms(2,1), Rms(2,2), tms[2],
+                    0,0,0,1;
+              Eigen::Affine3f Tms_(Tms);
+              //验证变换矩阵正确性
+/*
+              //std::cout<<"before angle: \n"<<pcl::getAngle3D(model_d, scene_d,true)<<std::endl;
+              //model_d = Tms_.rotation()*model_d;
+              //model_d = Rx_.rotation()*this->model_trans->getData(Hash::Trans_key(model_data->second.r))->second.T.rotation()*model_d;
+
+              //std::cout<<"after angle: \n"<<pcl::getAngle3D(model_d, scene_d,true)<<std::endl;
+
+
+              //std::cout<<"m_a:"<<model_data->second.angle*180/M_PI<<std::endl;
+              //std::cout<<"s_a:"<<data.second.angle*180/M_PI<<std::endl;
+              //std::cout<<"a:"<<alpha*180/M_PI<<std::endl;
+              model_d =
+                  Eigen::Vector3f(
+                      (model_data->second.t.x - model_data->second.r.x),
+                      (model_data->second.t.y - model_data->second.r.y),
+                      (model_data->second.t.z - model_data->second.r.z))
+                      .normalized();
+              scene_d =
+                  Eigen::Vector3f((data.second.t.x - data.second.r.x),
+                                  (data.second.t.y - data.second.r.y),
+                                  (data.second.t.z - data.second.r.z))
+                      .normalized();
+              Eigen::Vector3f model_d_after = (Tms_.rotation() * model_d).normalized();
               //std::cout<<"after: \n"<<model_d_after<<std::endl;
               //std::cout<<"ref: \n"<<scene_d<<std::endl;
               //std::cout<<"before: \n"<<pcl::getAngle3D(model_d,scene_d,true)<<std::endl;
               //std::cout<<"after: \n"<<pcl::getAngle3D(model_d_after,scene_d,true)<<std::endl;
-              Eigen::Vector3f model_n = (model_d.cross(x)).normalized();
-              Eigen::Vector3f scene_n = (scene_d.cross(x)).normalized();
+              Eigen::Vector3f model_n = (model_d.cross(Eigen::Vector3f (model_data->second.r.normal_x,model_data->second.r.normal_y, model_data->second.r.normal_z))).normalized();
+              Eigen::Vector3f scene_n = (scene_d.cross(Eigen::Vector3f (data.second.r.normal_x,data.second.r.normal_y, data.second.r.normal_z))).normalized();
 
               float delta_ = acos(fminf(fmaxf(fabs(model_n.dot(scene_n))/(model_n.norm()*scene_n.norm()),-1.0),1.0))*180/M_PI;
-              //std::cout<<"before_delta_angle: \n"<<delta_<<std::endl;
-              model_n = (model_d_after.cross(x)).normalized();
-              scene_n = (scene_d.cross(x)).normalized();
+              std::cout<<"before_delta_angle: \n"<<delta_<<std::endl;
+              model_n = (model_d_after.cross(Tms_.rotation()*Eigen::Vector3f (model_data->second.r.normal_x,model_data->second.r.normal_y, model_data->second.r.normal_z))).normalized();
+              scene_n = (scene_d.cross(Eigen::Vector3f (data.second.r.normal_x,data.second.r.normal_y, data.second.r.normal_z))).normalized();
 
-              //delta_ = acos(fminf(fmaxf(fabs(model_n.dot(scene_n))/(model_n.norm()*scene_n.norm()),-1.0),1.0))*180/M_PI;
-              //std::cout<<"after_delta_angle: \n"<<delta_<<std::endl;
-#pragma omp critical
-              sum+=delta_;
-#pragma omp critical
-              ++cnt;
-              model_data++;
+              delta_ = acos(fminf(fmaxf(fabs(model_n.dot(scene_n))/(model_n.norm()*scene_n.norm()),-1.0),1.0))*180/M_PI;
+              std::cout<<"after_delta_angle: \n"<<delta_<<std::endl;
+*/
+
+              ++model_data;
             }
           }
         }
       }
 
     }
-    std::cout<<"average: \n"<<sum/cnt<<std::endl;
   }
 }
 }  // namespace PPF
