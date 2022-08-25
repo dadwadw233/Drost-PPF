@@ -100,7 +100,7 @@ void PPFRegistration::compute() {
     double sum = 0;
     //初始化accumulatorSpace
     accumulatorSpace.resize(this->scene_cloud_with_normal->size()+1);
-    for(auto s:accumulatorSpace){
+    for(auto &s:accumulatorSpace){
       s.resize(static_cast<int>(360/(angle_discretization_step*180/M_PI))+1);
     }
     for (auto i = 0; i < scene_cloud_with_normal->points.size(); ++i) {
@@ -129,9 +129,9 @@ void PPFRegistration::compute() {
           R(2, 0), R(2, 1), R(2, 2), t[2], 0, 0, 0, 1;
       Eigen::Affine3f T_(T);
 
-/*#pragma omp parallel for shared(i, scene_reference_point_sampling_rate, \
-                                R, cout, sum, cnt) private(p1, p2, n1, n2, delta,       \
-                                           data) default(none) num_threads(15)*/
+#pragma omp parallel for shared(i, scene_reference_point_sampling_rate, \
+                                R, cout, sum, cnt, T_) private(p1, p2, n1, n2, delta,       \
+                                           data) default(none) num_threads(15)
       for (auto j = 0; j < scene_cloud_with_normal->points.size(); j++) {
         if (i == j) {
           continue;
@@ -280,6 +280,8 @@ void PPFRegistration::compute() {
 
               alpha = static_cast<int>(std::floor(180*alpha/M_PI/(angle_discretization_step*180/M_PI)));
               //std::cout<<alpha<<std::endl;
+#pragma omp critical
+              vote(i, alpha,T_);
 
 
               ++model_data;
@@ -289,6 +291,14 @@ void PPFRegistration::compute() {
       }
 
     }
+
   }
+}
+void PPFRegistration::vote(const int& i_, const int& alpha_,
+                           const Eigen::Affine3f& T_) {
+
+  accumulatorSpace[i_][alpha_].value+=1;
+
+  accumulatorSpace[i_][alpha_].T_set.push_back(T_);
 }
 }  // namespace PPF

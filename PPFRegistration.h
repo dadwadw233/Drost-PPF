@@ -59,15 +59,18 @@ class PPFRegistration {
 
  private:
   struct Accumulator{
-    int value;
-    Eigen::Affine3f T{};
-    Accumulator(){
-      value = 0;
-    }
-    Accumulator(const int &value_, const Eigen::Affine3f &T_):value(value_),T(T_){};
-
+    int value = 0;
+    std::vector<Eigen::Affine3f>T_set;
   };
   bool check();
+  void vote(const int &i_, const int &alpha_, const Eigen::Affine3f &T_);
+  decltype(auto) getMeanTransform(const int &i_, const int &alpha_){
+    Eigen::Matrix4f sum{};
+    for(auto T:accumulatorSpace[i_][alpha_].T_set){
+      sum+=T.matrix();
+    }
+    return Eigen::Affine3f (sum/accumulatorSpace[i_][alpha_].value);
+  }
   float scene_reference_point_sampling_rate = 0;
   float clustering_position_diff_threshold = 0;
   float clustering_rotation_diff_threshold = 0;
