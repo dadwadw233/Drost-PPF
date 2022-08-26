@@ -99,7 +99,7 @@ void PPFRegistration::compute() {
     int cnt = 0;
     double sum = 0;
     //初始化accumulatorSpace
-    accumulatorSpace.resize(this->scene_cloud_with_normal->points.size()+1);
+    accumulatorSpace.resize(this->model_cloud_with_normal->points.size());
     for(auto &s:accumulatorSpace){
       s.resize(static_cast<int>(360/(angle_discretization_step*180/M_PI))+1);
     }
@@ -281,7 +281,7 @@ void PPFRegistration::compute() {
               alpha = static_cast<int>(std::floor(180*alpha/M_PI/(angle_discretization_step*180/M_PI)));
               //std::cout<<alpha<<std::endl;
 #pragma omp critical
-              vote(i, alpha,Tms_);
+              vote(model_data->second.index, alpha,Tms_);
               ++model_data;
             }
           }

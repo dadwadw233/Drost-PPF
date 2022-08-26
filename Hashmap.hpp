@@ -26,9 +26,10 @@ struct HashData {
   pcl::PointNormal r;
   pcl::PointNormal t;
   double angle{};
+  int index;
   HashData(const pcl::PointNormal &r_, const pcl::PointNormal &t_,
-           const double angle_)
-      : r(r_), t(t_), angle(angle_){};
+           const double &angle_, const int &index_)
+      : r(r_), t(t_), angle(angle_), index(index_){};
   HashData() = default;
 };
 struct HashKey {

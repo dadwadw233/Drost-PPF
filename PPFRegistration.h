@@ -68,12 +68,21 @@ class PPFRegistration {
   void vote(const int &i_, const int &alpha_, const Eigen::Affine3f &T_);
   decltype(auto) getMeanTransform(const int i_, const int alpha_){
     Eigen::Matrix4f sum{};
+    sum<<0,0,0,0,
+        0,0,0,0,
+        0,0,0,0,
+        0,0,0,0;
     //std::cout<<"ok"<<std::endl;
     //std::cout<<accumulatorSpace[i_][alpha_].value<<std::endl;
     for(auto T:accumulatorSpace[i_][alpha_].T_set){
+      //std::cout<<"\n"<<T.matrix();
       sum+=T.matrix();
     }
-    return Eigen::Affine3f (sum/accumulatorSpace[i_][alpha_].T_set.size());
+    //std::cout<<"T_sum :\n"<<sum<<std::endl;
+    Eigen::Matrix4f final{};
+    final<<sum/accumulatorSpace[i_][alpha_].T_set.size();
+    Eigen::Affine3f final_{final};
+    return final_;
     //return accumulatorSpace[i_][alpha_].T_set[0];
   }
   decltype(auto) accumulatorSort(){
@@ -93,8 +102,9 @@ class PPFRegistration {
     }
     //std::cout<<i<<" "<<alpha;
     std::cout<<"max vote :"<<max_value<<std::endl;
-    //return getMeanTransform(i,alpha);
-    return accumulatorSpace[i][alpha].T_set[0];
+    return getMeanTransform(i,alpha);
+
+    //return accumulatorSpace[i][alpha].T_set[0];
   }
 
   decltype(auto) HypoVerification(const Eigen::Affine3f &T) {

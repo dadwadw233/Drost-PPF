@@ -117,7 +117,7 @@ void PPFEstimation::compute(
 
           data.second.r = input_point_normal->points[i];
           data.second.t = input_point_normal->points[j];
-
+          data.second.index = i;
 #pragma omp critical
           hash_map->addInfo(data);
         }
