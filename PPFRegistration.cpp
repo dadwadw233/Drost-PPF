@@ -151,6 +151,7 @@ void PPFRegistration::compute() {
 
           delta = p2 - p1;
           float f4 = delta.norm();
+          delta.normalize();
           Eigen::Vector3f d = delta.normalized();
           d = R * d;
           Eigen::Vector3f x{1, 0, 0};
@@ -174,13 +175,12 @@ void PPFRegistration::compute() {
           }
 
           data.second.angle = scene_alpha;
-          delta /= f4;
 
-          float f1 = n1[0] * delta[0] + n1[1] * delta[1] + n1[2] * delta[2];
+          float f1 = atan2(delta.cross(n1).norm(), delta.dot(n1));
 
-          float f2 = n1[0] * delta[0] + n2[1] * delta[1] + n2[2] * delta[2];
+          float f2 = atan2(delta.cross(n2).norm(), delta.dot(n2));
 
-          float f3 = n1[0] * n2[0] + n1[1] * n2[1] + n1[2] * n2[2];
+          float f3 = atan2(n1.cross(n2).norm(), n1.dot(n2));
 
           data.first.k1 =
               static_cast<int>(std::floor(f1 / angle_discretization_step));
@@ -229,6 +229,7 @@ void PPFRegistration::compute() {
               //std::cout<<"second: \n"<<Rx<<std::endl;
               //生成变换矩阵
               //Eigen::Matrix4f Tms = T_.inverse().matrix()*Rx_.matrix()*this->model_trans->getData(Hash::Trans_key(model_data->second.r))->second.T.matrix();
+
                 Eigen::Matrix3f Rms = T_.rotation().inverse()*Rx_.rotation()*this->model_trans->getData(Hash::Trans_key(model_data->second.r))->second.T.rotation();
                 Eigen::Vector3f tms = -T_.translation()+this->model_trans->getData(Hash::Trans_key(model_data->second.r))->second.T.translation();
                 Eigen::Matrix4f Tms{};
@@ -278,7 +279,7 @@ void PPFRegistration::compute() {
 */
               //离散化alpha
 
-              alpha = static_cast<int>(std::floor(180*alpha/M_PI/(angle_discretization_step*180/M_PI)));
+              alpha = static_cast<int>(std::floor((180*alpha/M_PI)/(angle_discretization_step*180/M_PI)));
               //std::cout<<alpha<<std::endl;
 #pragma omp critical
               vote(model_data->second.index, alpha,Tms_);

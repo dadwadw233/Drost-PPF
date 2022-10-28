@@ -76,6 +76,7 @@ void PPFEstimation::compute(
               input_point_normal->points[j].normal_z;
           delta = p2 - p1;  // pt-pr
           float f4 = delta.norm();
+          delta.normalize();
           Eigen::Vector3f d = delta.normalized();
           d = R * d;
           Eigen::Vector3f x{1, 0, 0};
@@ -83,7 +84,7 @@ void PPFEstimation::compute(
           Eigen::Vector3f y{0, 1, 0};
 
           double model_alpha =
-              acos(fabs(d.cross(x).dot(y)) / (d.cross(x).norm() * y.norm()));
+              acos(fabs(d.cross(x).dot(y)) / (d.cross(x).norm() * y.norm()));//求取二面角
 
           if (fabs(pcl::getAngle3D(d, z, true)) <= 90 &&
               fabs(pcl::getAngle3D(d, y, true)) <= 90) {
@@ -96,15 +97,16 @@ void PPFEstimation::compute(
             model_alpha = M_PI + model_alpha;
           } else {
             model_alpha = M_PI - model_alpha;
-          }
+          }//按照所处不同的象限进行分类
           data.second.angle = model_alpha;
-          delta /= f4;
 
-          float f1 = n1[0] * delta[0] + n1[1] * delta[1] + n1[2] * delta[2];
 
-          float f2 = n1[0] * delta[0] + n2[1] * delta[1] + n2[2] * delta[2];
 
-          float f3 = n1[0] * n2[0] + n1[1] * n2[1] + n1[2] * n2[2];
+          float f1 = atan2(delta.cross(n1).norm(), delta.dot(n1));
+
+          float f2 = atan2(delta.cross(n2).norm(), delta.dot(n2));
+
+          float f3 = atan2(n1.cross(n2).norm(), n1.dot(n2));
 
           data.first.k1 =
               static_cast<int>(std::floor(f1 / angle_discretization_step));

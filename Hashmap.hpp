@@ -27,6 +27,7 @@ struct HashData {
   pcl::PointNormal t;
   double angle{};
   int index;
+  Eigen::Affine3f T;
   HashData(const pcl::PointNormal &r_, const pcl::PointNormal &t_,
            const double &angle_, const int &index_)
       : r(r_), t(t_), angle(angle_), index(index_){};
